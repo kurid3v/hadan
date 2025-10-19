@@ -207,8 +207,26 @@ const QuestionView: React.FC<{ name: string }> = ({ name }) => {
   const [yesButtonScale, setYesButtonScale] = useState(1);
 
   const handleNoHover = () => {
-    const top = Math.random() * (window.innerHeight - 60);
-    const left = Math.random() * (window.innerWidth - 120);
+    const buttonWidth = 120; // Approximate width in px
+    const buttonHeight = 60; // Approximate height in px
+
+    // Define the range of movement in pixels from the center of the screen
+    const horizontalRange = 300; 
+    const verticalRange = 250;
+
+    // Calculate center of the viewport
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+
+    // Calculate a random position within the defined range around the center
+    // We subtract half the range to center the movement box, and then add a random value within the range.
+    let left = (centerX - horizontalRange / 2) + Math.random() * horizontalRange;
+    let top = (centerY - verticalRange / 2) + Math.random() * verticalRange;
+    
+    // Ensure the button doesn't go off-screen
+    left = Math.max(0, Math.min(left, window.innerWidth - buttonWidth));
+    top = Math.max(0, Math.min(top, window.innerHeight - buttonHeight));
+
     setNoPosition({
       top: `${top}px`,
       left: `${left}px`,
