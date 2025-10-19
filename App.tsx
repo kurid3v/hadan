@@ -13,55 +13,149 @@ const HeartIcon = () => (
   </svg>
 );
 
+const FallingHeart = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+    <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+  </svg>
+);
+
+const FallingWish: React.FC<{ text: string }> = ({ text }) => (
+  <div className="p-2 bg-white/80 backdrop-blur-sm rounded-lg shadow-md">
+    <p className="text-sm sm:text-base font-semibold text-rose-500 italic whitespace-nowrap">
+      {text}
+    </p>
+  </div>
+);
+
+type FallingItem = {
+  id: string;
+  type: 'image' | 'heart' | 'wish';
+  value?: string;
+};
+
 const CelebrationView: React.FC = () => {
-  const [shuffledImages, setShuffledImages] = useState<string[]>([]);
+    const [fallingItems, setFallingItems] = useState<FallingItem[]>([]);
+    const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  // Xáo trộn ảnh khi component được mount
-  useEffect(() => {
-    setShuffledImages([...images].sort(() => Math.random() - 0.5));
-  }, []);
+    useEffect(() => {
+        const wishes = [
+            "20/10",
+            "Chúc em hạnh phúc",
+            "Iu",
+            ":)))))",
+            "?"
+        ];
+        
+        const items: FallingItem[] = [];
 
-  // Các lớp xoay ảnh để tạo hiệu ứng lộn xộn
-  const rotations = [
-    'transform -rotate-6',
-    'transform rotate-3',
-    'transform rotate-8',
-    'transform -rotate-2',
-    'transform rotate-5',
-    'transform -rotate-4',
-  ];
+        images.forEach((img, i) => items.push({ type: 'image', value: img, id: `img-${i}` }));
+        
+        for (let i = 0; i < 12; i++) {
+            items.push({ type: 'heart', id: `heart-${i}` });
+        }
+
+        wishes.forEach(wish => {
+            items.push({ type: 'wish', value: wish, id: `wish-${wish}-1` });
+            items.push({ type: 'wish', value: wish, id: `wish-${wish}-2` });
+        });
+
+        const shuffledItems = items.sort(() => Math.random() - 0.5);
+        setFallingItems(shuffledItems);
+    }, []);
+
+    const handleImageClick = (imageUrl: string) => {
+        setSelectedImage(imageUrl);
+    };
+
+    const handleCloseModal = () => {
+        setSelectedImage(null);
+    };
 
   return (
-    <div className="flex flex-col items-center justify-center text-center p-4 sm:p-6 bg-white rounded-2xl shadow-2xl w-full max-w-5xl mx-auto animate-fade-in-up">
-      {/* Container lưới ảnh linh hoạt */}
-      <div className="flex flex-wrap justify-center gap-6 p-4 w-full mb-6">
-        {shuffledImages.map((image, index) => {
-          const rotationClass = rotations[index % rotations.length];
-          return (
-            <div
-              key={index}
-              // Đặt chiều rộng để khoảng 5 ảnh vừa một hàng
-              className={`w-44 bg-white p-2 rounded-md shadow-lg transition-all duration-300 ease-in-out hover:scale-110 hover:z-10 cursor-pointer ${rotationClass}`}
-            >
-              <img
-                src={image}
-                alt={`Kỷ niệm ${index + 1}`}
-                // Thêm lazy loading để cải thiện hiệu suất
-                loading="lazy"
-                decoding="async"
-                // Đặt chiều cao cố định cho ảnh để đồng đều
-                className="rounded-sm object-cover w-full h-56"
-              />
-            </div>
-          );
-        })}
+    <div className={`fixed inset-0 w-full h-full overflow-hidden z-10 ${selectedImage ? 'animation-paused' : ''}`} style={{ perspective: '1000px' }}>
+      {fallingItems.map((item) => {
+        const style: React.CSSProperties = {
+          left: `${Math.random() * 95}vw`,
+          animationDuration: `${Math.random() * 8 + 14}s`,
+          animationDelay: `-${Math.random() * 20}s`,
+          '--rotate-x-end': `${(Math.random() - 0.5) * 360}deg`,
+          '--rotate-y-end': `${(Math.random() - 0.5) * 360}deg`,
+          '--rotate-z-end': `${(Math.random() - 0.5) * 180}deg`,
+        } as React.CSSProperties;
+        
+        let content;
+        let isClickable = false;
+        switch (item.type) {
+            case 'image':
+                isClickable = true;
+                content = (
+                     <div className="p-2 bg-white rounded-md shadow-lg">
+                        <img
+                          src={item.value}
+                          alt={`Kỷ niệm`}
+                          loading="lazy"
+                          decoding="async"
+                          className="rounded-sm object-cover w-32 h-40"
+                        />
+                    </div>
+                );
+                break;
+            case 'heart':
+                content = <FallingHeart />;
+                break;
+            case 'wish':
+                content = <FallingWish text={item.value!} />;
+                break;
+        }
+
+        return (
+          <div
+            key={item.id}
+            className={`absolute animate-image-rain-3d ${isClickable ? 'cursor-pointer' : 'pointer-events-none'}`}
+            style={style}
+            onClick={isClickable ? () => handleImageClick(item.value!) : undefined}
+          >
+           {content}
+          </div>
+        );
+      })}
+
+      <div className="relative z-20 flex flex-col items-center justify-center text-center w-full h-full pointer-events-none">
+        <div className="bg-white/80 backdrop-blur-sm p-6 sm:p-8 rounded-2xl shadow-2xl max-w-lg">
+          <h1 className="text-2xl sm:text-3xl font-bold text-rose-600 mb-2">
+            T biết mà:)))))
+          </h1>
+          <p className="text-gray-700 text-base sm:text-lg">
+            Chúc em 20/10 vui vẻ mạnh khoẻ nhe🥸💗
+          </p>
+        </div>
       </div>
-      <h1 className="text-2xl sm:text-3xl font-bold text-rose-600 mb-2 z-20">
-        T biết mà:)))))
-      </h1>
-      <p className="text-gray-700 text-base sm:text-lg z-20">
-        Chúc em 20/10 vui vẻ mạnh khoẻ nhe🥸💗
-      </p>
+      
+      {selectedImage && (
+        <div 
+            className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 animate-fade-in"
+            onClick={handleCloseModal}
+        >
+            <div 
+                className="relative bg-white p-2 rounded-lg shadow-2xl max-w-full max-h-full"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <img 
+                    src={selectedImage} 
+                    alt="Phóng to" 
+                    className="rounded-md object-contain"
+                    style={{ maxHeight: '90vh', maxWidth: '90vw' }}
+                />
+                 <button
+                    onClick={handleCloseModal}
+                    className="absolute -top-3 -right-3 bg-white text-gray-800 rounded-full h-8 w-8 flex items-center justify-center text-xl font-bold shadow-lg hover:bg-rose-200 transition-colors"
+                    aria-label="Đóng"
+                >
+                    &times;
+                </button>
+            </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -77,7 +171,6 @@ const QuestionView: React.FC = () => {
   const [yesButtonScale, setYesButtonScale] = useState(1);
 
   const handleNoHover = () => {
-    // Trừ đi kích thước nút để đảm bảo nó luôn ở trong khung nhìn
     const top = Math.random() * (window.innerHeight - 60);
     const left = Math.random() * (window.innerWidth - 120);
     setNoPosition({
@@ -141,13 +234,11 @@ const App: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  // Phát hoặc tạm dừng nhạc khi trạng thái isPlaying thay đổi
   useEffect(() => {
     if (audioRef.current) {
       if (isPlaying) {
-        // play() trả về một promise, có thể bị từ chối nếu trình duyệt chặn tự động phát
         audioRef.current.play().catch(() => {
-          setIsPlaying(false); // Đặt lại trạng thái nếu không thể phát
+          setIsPlaying(false);
         });
       } else {
         audioRef.current.pause();
@@ -175,10 +266,38 @@ const App: React.FC = () => {
         .animate-fade-in-up {
           animation: fade-in-up 0.5s ease-out forwards;
         }
+
+        @keyframes image-rain-3d {
+          from {
+            transform: translateY(-25vh) rotateX(0) rotateY(0) rotateZ(0);
+          }
+          to {
+            transform: translateY(125vh) rotateX(var(--rotate-x-end)) rotateY(var(--rotate-y-end)) rotateZ(var(--rotate-z-end));
+          }
+        }
+
+        .animate-image-rain-3d {
+          top: -25vh;
+          animation-name: image-rain-3d;
+          animation-timing-function: linear;
+          animation-iteration-count: infinite;
+          transform-style: preserve-3d;
+        }
+
+        @keyframes fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        
+        .animate-fade-in {
+            animation: fade-in 0.3s ease-out forwards;
+        }
+
+        .animation-paused .animate-image-rain-3d {
+          animation-play-state: paused;
+        }
       `}</style>
       
-      {/* Phần tử audio cho nhạc nền */}
-      {/* Thay thế 'src' bằng đường dẫn đến tệp nhạc của bạn. Ví dụ: '/background-music.mp3' */}
       <audio 
         ref={audioRef} 
         src="https://cdn.pixabay.com/audio/2022/08/04/audio_2dde668d05.mp3" 
@@ -186,7 +305,6 @@ const App: React.FC = () => {
         preload="auto"
       />
 
-      {/* Nút bật/tắt nhạc */}
       <button
         onClick={toggleMusic}
         className="fixed bottom-5 right-5 bg-white/50 backdrop-blur-sm text-rose-600 p-3 rounded-full shadow-lg hover:bg-white/75 transition-colors z-50 focus:outline-none focus:ring-2 focus:ring-rose-400"
