@@ -170,31 +170,40 @@ const QuestionView: React.FC<{ name: string }> = ({ name }) => {
   });
   const [yesButtonScale, setYesButtonScale] = useState(1);
   const noButtonRef = useRef<HTMLButtonElement>(null);
+  const yesButtonRef = useRef<HTMLButtonElement>(null);
+
 
   const handleNoHover = () => {
-    if (!noButtonRef.current) return;
+    if (!noButtonRef.current || !yesButtonRef.current) return;
 
-    const button = noButtonRef.current;
-    const buttonRect = button.getBoundingClientRect();
-    const buttonWidth = buttonRect.width;
-    const buttonHeight = buttonRect.height;
+    const noButton = noButtonRef.current;
+    const yesButton = yesButtonRef.current;
+    
+    const noRect = noButton.getBoundingClientRect();
+    const yesRect = yesButton.getBoundingClientRect();
+    
+    // Define a smaller range around the 'Yes' button
+    const maxDistance = 100; // The button will move within a 100px radius of the 'Yes' button's center.
 
-    // Define a safe area with padding to prevent the button from touching the edges
+    // Center of the 'Yes' button, relative to viewport
+    const yesCenterX = yesRect.left + yesRect.width / 2;
+    const yesCenterY = yesRect.top + yesRect.height / 2;
+
+    // Generate a random position around the 'Yes' button
+    const angle = Math.random() * 2 * Math.PI;
+    const distance = Math.random() * maxDistance;
+    
+    let newLeft = yesCenterX + distance * Math.cos(angle) - noRect.width / 2;
+    let newTop = yesCenterY + distance * Math.sin(angle) - noRect.height / 2;
+
+    // Ensure the button stays within the viewport boundaries
     const padding = 15;
-
-    const maxX = window.innerWidth - buttonWidth - padding;
-    const maxY = window.innerHeight - buttonHeight - padding;
-
-    const minX = padding;
-    const minY = padding;
-
-    // Generate random coordinates within the safe area
-    const newLeft = Math.random() * (maxX - minX) + minX;
-    const newTop = Math.random() * (maxY - minY) + minY;
+    const safeLeft = Math.max(padding, Math.min(newLeft, window.innerWidth - noRect.width - padding));
+    const safeTop = Math.max(padding, Math.min(newTop, window.innerHeight - noRect.height - padding));
 
     setNoPosition({
-      top: `${newTop}px`,
-      left: `${newLeft}px`,
+      top: `${safeTop}px`,
+      left: `${safeLeft}px`,
       position: 'absolute',
     });
     setYesButtonScale((prev) => prev + 0.2);
@@ -216,6 +225,7 @@ const QuestionView: React.FC<{ name: string }> = ({ name }) => {
       </h2>
       <div className="flex items-center justify-center gap-6">
         <button
+          ref={yesButtonRef}
           onClick={handleYesClick}
           className="bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-8 rounded-lg text-xl shadow-lg transition-transform duration-300 ease-in-out transform origin-center"
           style={{ transform: `scale(${yesButtonScale})` }}
