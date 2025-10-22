@@ -160,42 +160,6 @@ const CelebrationView: React.FC = () => {
   );
 };
 
-const NameInputView: React.FC<{ onNameSubmit: (name: string) => void }> = ({ onNameSubmit }) => {
-  const [inputValue, setInputValue] = useState('');
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (inputValue.trim()) {
-      onNameSubmit(inputValue.trim());
-    }
-  };
-
-  return (
-    <div className="flex flex-col items-center p-6 bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl animate-fade-in-up">
-      <h2 className="text-2xl sm:text-3xl font-bold text-rose-600 mb-6 text-center">
-        Cho tớ biết tên của bạn nhé?
-      </h2>
-      <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row items-center gap-4 w-full max-w-md">
-        <input
-          type="text"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          placeholder="Nhập tên của bạn..."
-          className="px-4 py-3 border-2 border-rose-200 rounded-lg focus:ring-2 focus:ring-rose-400 focus:outline-none transition w-full text-center sm:text-left"
-          aria-label="Tên của bạn"
-          required
-        />
-        <button
-          type="submit"
-          className="bg-rose-500 hover:bg-rose-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform duration-200 ease-in-out hover:scale-105 w-full sm:w-auto"
-        >
-          Xong!
-        </button>
-      </form>
-    </div>
-  );
-};
-
 
 const QuestionView: React.FC<{ name: string }> = ({ name }) => {
   const [isYes, setIsYes] = useState(false);
@@ -205,31 +169,32 @@ const QuestionView: React.FC<{ name: string }> = ({ name }) => {
     position: 'static',
   });
   const [yesButtonScale, setYesButtonScale] = useState(1);
+  const noButtonRef = useRef<HTMLButtonElement>(null);
 
   const handleNoHover = () => {
-    const buttonWidth = 120; // Approximate width in px
-    const buttonHeight = 60; // Approximate height in px
+    if (!noButtonRef.current) return;
 
-    // Define the range of movement in pixels from the center of the screen
-    const horizontalRange = 300; 
-    const verticalRange = 250;
+    const button = noButtonRef.current;
+    const buttonRect = button.getBoundingClientRect();
+    const buttonWidth = buttonRect.width;
+    const buttonHeight = buttonRect.height;
 
-    // Calculate center of the viewport
-    const centerX = window.innerWidth / 2;
-    const centerY = window.innerHeight / 2;
+    // Define a safe area with padding to prevent the button from touching the edges
+    const padding = 15;
 
-    // Calculate a random position within the defined range around the center
-    // We subtract half the range to center the movement box, and then add a random value within the range.
-    let left = (centerX - horizontalRange / 2) + Math.random() * horizontalRange;
-    let top = (centerY - verticalRange / 2) + Math.random() * verticalRange;
-    
-    // Ensure the button doesn't go off-screen
-    left = Math.max(0, Math.min(left, window.innerWidth - buttonWidth));
-    top = Math.max(0, Math.min(top, window.innerHeight - buttonHeight));
+    const maxX = window.innerWidth - buttonWidth - padding;
+    const maxY = window.innerHeight - buttonHeight - padding;
+
+    const minX = padding;
+    const minY = padding;
+
+    // Generate random coordinates within the safe area
+    const newLeft = Math.random() * (maxX - minX) + minX;
+    const newTop = Math.random() * (maxY - minY) + minY;
 
     setNoPosition({
-      top: `${top}px`,
-      left: `${left}px`,
+      top: `${newTop}px`,
+      left: `${newLeft}px`,
       position: 'absolute',
     });
     setYesButtonScale((prev) => prev + 0.2);
@@ -258,6 +223,7 @@ const QuestionView: React.FC<{ name: string }> = ({ name }) => {
           Có chứ!
         </button>
         <button
+          ref={noButtonRef}
           onMouseEnter={handleNoHover}
           onClick={handleNoHover}
           className="bg-red-500 hover:bg-red-600 text-white font-bold py-4 px-8 rounded-lg text-xl shadow-lg transition-all duration-300 ease-in-out"
@@ -287,8 +253,6 @@ const PauseIcon = () => (
 const App: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [name, setName] = useState('');
-  const [view, setView] = useState<'nameInput' | 'question'>('nameInput');
 
   useEffect(() => {
     if (audioRef.current) {
@@ -306,22 +270,6 @@ const App: React.FC = () => {
     setIsPlaying(!isPlaying);
   };
 
-  const handleNameSubmit = (submittedName: string) => {
-    setName(submittedName);
-    setView('question');
-  };
-
-  const renderContent = () => {
-    switch (view) {
-      case 'nameInput':
-        return <NameInputView onNameSubmit={handleNameSubmit} />;
-      case 'question':
-        return <QuestionView name={name} />;
-      default:
-        return <NameInputView onNameSubmit={handleNameSubmit} />;
-    }
-  };
-  
   return (
     <main className="bg-rose-100 min-h-screen w-full flex items-center justify-center p-4 overflow-hidden relative">
       <style>{`
@@ -385,7 +333,7 @@ const App: React.FC = () => {
         {isPlaying ? <PauseIcon /> : <PlayIcon />}
       </button>
 
-      {renderContent()}
+      <QuestionView name="Sang" />
     </main>
   );
 };
